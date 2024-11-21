@@ -1,14 +1,12 @@
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import React from 'react';
 import { Provider } from 'react-redux';
 import store from './redux/store';
-import Timer from './components/Timer';
+import Timer from './components/Timer'; // Убедитесь, что путь корректен
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <Timer />
-      </Provider>
-    </GestureHandlerRootView>
+    <Provider store={store}>
+      <Timer />
+    </Provider>
   );
 }

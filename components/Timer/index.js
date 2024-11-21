@@ -1,80 +1,75 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import {
-  GestureDetector,
-  Gesture,
-} from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
-import { useDispatch } from 'react-redux';
-import { startTimer, restartTimer } from '../../redux/actions';
+import React, { useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { startTimer, restartTimer, addSecond } from '../../redux/actions';
 
 const Timer = () => {
   const dispatch = useDispatch();
+  const { isPlaying, elapsedTime, timerDuration } = useSelector(state => state);
 
-  // Shared values for animation
-  const translateX = useSharedValue(0);
-  const scale = useSharedValue(1);
+  useEffect(() => {
+    let timer;
+    if (isPlaying) {
+      timer = setInterval(() => {
+        dispatch(addSecond());
+      }, 1000);
+    } else {
+      clearInterval(timer);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying]);
 
-  // Tap gesture
-  const tapGesture = Gesture.Tap().onEnd(() => {
-    dispatch(startTimer());
-  });
-
-  // Long press gesture
-  const longPressGesture = Gesture.LongPress()
-    .minDuration(300)
-    .onEnd(() => {
-      dispatch(restartTimer());
-    });
-
-  // Pan gesture
-  const panGesture = Gesture.Pan().onUpdate((event) => {
-    translateX.value = event.translationX;
-  });
-
-  // Pinch gesture
-  const pinchGesture = Gesture.Pinch().onUpdate((event) => {
-    scale.value = event.scale;
-  });
-
-  // Animated styles
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: withSpring(translateX.value) },
-      { scale: withSpring(scale.value) },
-    ],
-  }));
+  const formatTime = time => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+  };
 
   return (
-    <GestureDetector
-      gesture={Gesture.Exclusive(
-        tapGesture,
-        longPressGesture,
-        panGesture,
-        pinchGesture
-      )}
-    >
-      <Animated.View style={[styles.timerContainer, animatedStyle]}>
-        <Text style={styles.timerText}>Use gestures on me!</Text>
-      </Animated.View>
-    </GestureDetector>
+    <View style={styles.container}>
+      <Text style={styles.timerText}>{formatTime(timerDuration - elapsedTime)}</Text>
+      <View style={styles.buttonsContainer}>
+        {!isPlaying ? (
+          <TouchableOpacity
+            onPress={() => dispatch(startTimer())}
+            style={styles.button}>
+            <Text style={styles.buttonText}>Start</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => dispatch(restartTimer())}
+            style={styles.button}>
+            <Text style={styles.buttonText}>Stop</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  timerContainer: {
+  container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
   timerText: {
-    fontSize: 24,
+    fontSize: 48,
     fontWeight: 'bold',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  button: {
+    marginHorizontal: 10,
+    padding: 15,
+    backgroundColor: '#2196F3',
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 
